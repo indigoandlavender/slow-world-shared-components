@@ -1,6 +1,6 @@
 # Slow World Shared Components
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Last Updated:** December 25, 2025
 
 Stable, tested components shared across all Slow World projects. **Do not modify unless intentionally updating.**
@@ -55,26 +55,39 @@ The component expects these to exist in your project:
 
 #### Basic Usage
 
+**CRITICAL: Page-level pattern to prevent PayPal hydration errors:**
+
 ```tsx
 import BookingModal from "@/components/BookingModal";
 
+// State
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+
+// In JSX - Keep modal mounted, use isOpen for visibility
 <BookingModal
-  isOpen={isOpen}
-  onClose={() => setIsOpen(false)}
-  item={{
-    id: "room-123",
-    name: "Deluxe Suite",
-    priceEUR: "150",
-    iCalURL: "https://...", // optional
+  isOpen={isModalOpen && selectedItem !== null}
+  onClose={() => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedItem(null), 300); // Delay clearing
   }}
-  config={{
-    maxGuests: 2,
-    hasCityTax: true,
-    selectCheckout: true,
-  }}
+  item={selectedItem ? {
+    id: selectedItem.id,
+    name: selectedItem.name,
+    priceEUR: selectedItem.price,
+  } : { id: "", name: "", priceEUR: "0" }}
+  config={{...}}
   formatPrice={(amount) => `€${amount}`}
   paypalClientId="your-client-id"
 />
+```
+
+**DO NOT use conditional rendering like this (causes PayPal errors):**
+```tsx
+// ❌ WRONG - causes removeChild error
+{selectedItem && (
+  <BookingModal isOpen={isModalOpen} ... />
+)}
 ```
 
 #### Config Reference
@@ -140,6 +153,7 @@ config={{
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | Dec 25, 2025 | **PayPal fix** - Keep modal mounted, setTimeout delay on close, buttonsInstance.close() cleanup. Restored sleek Cereal/Kinfolk design. |
 | 1.0.0 | Dec 25, 2025 | Initial release - unified BookingModal |
 
 ---
